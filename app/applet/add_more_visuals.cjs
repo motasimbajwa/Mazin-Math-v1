@@ -1,0 +1,164 @@
+const fs = require('fs');
+
+const moreCases = `
+    case 'divergence_cuboid':
+      defaultData = [
+         {
+            type: 'mesh3d',
+            x: [0, 1, 1, 0, 0, 1, 1, 0],
+            y: [0, 0, 1, 1, 0, 0, 1, 1],
+            z: [0, 0, 0, 0, 1, 1, 1, 1],
+            i: [7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
+            j: [3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
+            k: [0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
+            opacity: 0.2,
+            color: 'lightblue',
+            name: 'Cuboid Volume'
+         },
+         {
+            type: 'scatter3d',
+            mode: 'lines+markers',
+            x: [1, 1.5], y: [0.5, 0.5], z: [0.5, 0.5],
+            marker: { symbol: 'arrow', size: 5, color: 'red' },
+            line: { color: 'red', width: 4 },
+            name: 'Flux Out (Right)'
+         },
+         {
+            type: 'scatter3d',
+            mode: 'lines+markers',
+            x: [0, -0.5], y: [0.5, 0.5], z: [0.5, 0.5],
+            marker: { symbol: 'arrow', size: 5, color: 'blue' },
+            line: { color: 'blue', width: 4 },
+            name: 'Flux In (Left)'
+         }
+      ];
+      defaultLayout.title = 'Deriving Divergence (Shrinking Cuboid)';
+      tourSteps = [
+         { text: "We define Divergence by looking at a tiny cuboid volume $\\\\Delta V$." },
+         { text: "We sum the fluid velocity (flux) exiting and entering each face." },
+         { text: "If the fluid leaving the right side is greater than what enters the left, there is a net outward flux in the x-direction. Thus $\\\\partial F_x / \\\\partial x$ is positive!" },
+         { text: "As the box shrinks to zero, this sum of partial derivatives becomes the **Divergence** at a point." }
+      ];
+      break;
+
+    case 'curl_paddle_wheel':
+      defaultData = [
+         {
+            type: 'scatter',
+            mode: 'markers',
+            x: [0], y: [0],
+            marker: { symbol: 'cross', size: 30, color: 'black' },
+            name: 'Paddle Wheel'
+         }
+      ];
+      {
+         const x = []; const y = [];
+         const u = []; const v = [];
+         for(let i=-2; i<=2; i+=1) {
+           for(let j=-2; j<=2; j+=1) {
+              x.push(i); y.push(j);
+              u.push(j); v.push(0); // F = y * i
+           }
+         }
+         defaultData.push({
+            type: 'cone',
+            x, y, u, v,
+            sizemode: 'scaled',
+            sizeref: 0.5,
+            colorscale: 'Blues',
+            showscale: false
+         });
+      }
+      defaultLayout.title = 'Meaning of Curl (Paddle Wheel in Shear Flow)';
+      tourSteps = [
+         { text: "Imagine a river where the water flows uniformly but faster near the top ($F = y\\\\mathbf{i}$)." },
+         { text: "Place a tiny paddle wheel in this flow." },
+         { text: "The water strikes the top paddles harder than the bottom paddles." },
+         { text: "This imbalance causes the paddle wheel to rotate clockwise! A net rotation means **Curl is not zero**." }
+      ];
+      break;
+
+    case 'stokes_capping_surface':
+      defaultData = [
+         {
+            type: 'scatter3d',
+            mode: 'lines',
+            x: Math.cos(Array.from({length: 40}, (_, i) => i * 2 * Math.PI / 39)),
+            y: Math.sin(Array.from({length: 40}, (_, i) => i * 2 * Math.PI / 39)),
+            z: Array(40).fill(0),
+            line: { color: 'black', width: 6 },
+            name: 'Closed Curve C'
+         }
+      ];
+      // create a hemisphere
+      {
+         const u = Array.from({length: 20}, (_, i) => i * Math.PI / 19 / 2); // 0 to pi/2
+         const v = Array.from({length: 40}, (_, i) => i * 2 * Math.PI / 39); // 0 to 2pi
+         const x = []; const y = []; const z = [];
+         for(let i=0; i<u.length; i++){
+            for(let j=0; j<v.length; j++){
+               x.push(Math.sin(u[i])*Math.cos(v[j]));
+               y.push(Math.sin(u[i])*Math.sin(v[j]));
+               z.push(Math.cos(u[i]));
+            }
+         }
+         defaultData.push({
+            type: 'mesh3d', x, y, z, opacity: 0.5, color: 'orange', name: 'Capping Hemisphere'
+         });
+      }
+      defaultLayout.title = 'Stokes\\' Theorem: Capping Surfaces';
+      tourSteps = [
+         { text: "Consider a closed loop wire C (black ring)." },
+         { text: "You can blow a soap bubble across this ring. The soap film is a **capping surface** S." },
+         { text: "Stokes\\' Theorem states that integrating Curl over the soap bubble is exactly equal to the circulation along the wire ring!" },
+         { text: "Crucially, *any* soap bubble shape will yield the same result, as long as its boundary is the ring C." }
+      ];
+      break;
+
+    case 'surface_integral_projection':
+      defaultData = [
+         {
+            type: 'mesh3d',
+            x: [0, 1, 1, 0], y: [0, 0, 1, 1], z: [1, 1.5, 2, 1.5], // slanted surface
+            opacity: 0.6, color: 'cyan', name: 'Surface S'
+         },
+         {
+            type: 'mesh3d',
+            x: [0, 1, 1, 0], y: [0, 0, 1, 1], z: [0, 0, 0, 0], // shadow on xy plane
+            opacity: 0.3, color: 'gray', name: 'Projection R'
+         },
+         {
+            type: 'scatter3d', mode: 'lines',
+            x: [0,0], y: [1,1], z: [0,1.5], line: { dash: 'dash', color: 'gray'}
+         },
+         {
+            type: 'scatter3d', mode: 'lines',
+            x: [1,1], y: [1,1], z: [0,2], line: { dash: 'dash', color: 'gray'}
+         }
+      ];
+      defaultLayout.title = 'Evaluating Surface Integrals via Projection';
+      tourSteps = [
+         { text: "To compute a surface integral over a curved membrane $S$ (blue), we often struggle to parameterize it." },
+         { text: "The trick: shine a light down and project the surface onto a shadow region $R$ in the xy-plane (gray)." },
+         { text: "We sum up the area of small flat patches $dx\\\\,dy$ in $R$. But because $S$ is slanted, a patch on $S$ is larger than its shadow." },
+         { text: "We multiply $dx\\\\,dy$ by a geometric stretch factor $1/(\\\\mathbf{\\\\hat{n}} \\\\cdot \\\\mathbf{k})$ to account for the slant. Now the integral is easy!" }
+      ];
+      break;
+`;
+
+let targetFile = 'src/InteractivePlot.tsx';
+let txt = fs.readFileSync(targetFile, 'utf8');
+
+if (!txt.includes('case \\'divergence_cuboid\\':')) {
+  let idx = txt.lastIndexOf('    default:');
+  if (idx !== -1) {
+    let before = txt.substring(0, idx);
+    let after = txt.substring(idx);
+    fs.writeFileSync(targetFile, before + moreCases + after);
+    console.log("Added more visual cases to InteractivePlot.tsx");
+  } else {
+    console.log("Could not find default switch case.");
+  }
+} else {
+  console.log("Visuals already present");
+}

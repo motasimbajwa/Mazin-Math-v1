@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Remix: Mazin Full Mathematics v1",
+  "description": "An interactive, AI-powered mathematics tutor adopting the \u0027Calculus Made Easy\u0027 pedagogy, complete with LaTeX-rendered derivations and step-by-step rigorous problem solving.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

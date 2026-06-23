@@ -1,0 +1,27 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@media print {
+  body, html {
+    background: white;
+    font-size: 11pt;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Prevent elements from being cut in half across pages */
+  h1, h2, h3, h4, img, table, pre, blockquote {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  
+  h1, h2, h3, h4 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+  
+  article {
+    page-break-after: always;
+    break-after: page;
+  }
+}
